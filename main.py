@@ -56,3 +56,11 @@ async def mark_done():
 @app.get("/check_status", response_model=StatusResponse)
 async def check_status():
     return StatusResponse(success=True, done=manufacture_complete)
+
+@app.get("/current_ingredients")
+async def current_ingredients():
+    return await get_recipe()
+
+@app.post("/done")
+async def done():
+    return await mark_done()
