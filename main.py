@@ -73,6 +73,10 @@ async def check_status():
 async def current_ingredients():
     return await get_recipe()
 
+@app.get("/status", response_model=StatusResponse)
+async def status_alias():
+    return await check_status()
+
 @app.post("/done")
 async def done():
     return await mark_done()
