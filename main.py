@@ -3,6 +3,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
+from uuid import uuid4
 
 app = FastAPI()
 
@@ -18,9 +19,11 @@ app.add_middleware(
 # ===== 내부 상태 저장 =====
 recipe_storage: List[str] = []
 manufacture_complete: bool = False
+current_recipe_id: Optional[str] = None
 
 # ===== 데이터 모델 =====
 class RecipeRequest(BaseModel):
+    recipe_id: str
     ingredients: List[str]
 
 class StatusResponse(BaseModel):
@@ -33,17 +36,26 @@ class StatusResponse(BaseModel):
 
 @app.post("/send_recipe", response_model=StatusResponse)
 async def send_recipe(recipe: RecipeRequest):
-    global recipe_storage, manufacture_complete
+    global recipe_storage, manufacture_complete, current_recipe_id
     recipe_storage = recipe.ingredients
+    current_recipe_id = f"{recipe.recipe_id}_{str(uuid4())[:8]}"  # 예: abc123_9a3f5c2e
     manufacture_complete = False
     return StatusResponse(success=True, message="레시피 저장 완료")
 
 
 @app.get("/get_recipe", response_model=StatusResponse)
 async def get_recipe():
-    if recipe_storage:
-        return StatusResponse(success=True, ingredients=recipe_storage)
+    if recipe_storage and current_recipe_id:
+        return StatusResponse(
+            success=True,
+            ingredients=recipe_storage,
+            message=current_recipe_id
+        )
     return StatusResponse(success=False, message="레시피 없음")
+
+@app.get("/get_recipe_id")
+async def get_recipe_id():
+    return {"recipe_id": current_recipe_id}
 
 
 @app.post("/mark_done", response_model=StatusResponse)
